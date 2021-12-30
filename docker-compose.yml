@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:5.0.2
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=$MONGODB_USER
+      - MONGO_INITDB_ROOT_PASSWORD=$MONGODB_PASSWORD
+    ports:
+      - $MONGODB_LOCAL_PORT:$MONGODB_DOCKER_PORT
+    volumes:
+      - db:/data/db
+  cron-app:
+    depends_on:
+      - mongodb
+    build: .
+    restart: unless-stopped
+    environment:
+      - MONGODB_HOST=mongodb
+      - MONGODB_USER=$MONGODB_USER
+      - MONGODB_PASSWORD=$MONGODB_PASSWORD
+      - MONGODB_DATABASE=$MONGODB_DATABASE
+      - MONGODB_DOCKER_PORT=$MONGODB_DOCKER_PORT
+      - DIVAR_URLS=$DIVAR_URLS
+      - NODE_LOCAL_PORT=$NODE_LOCAL_PORT
+      - NODE_DOCKER_PORT=$NODE_DOCKER_PORT
+      - TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
+      - TELEGRAM_CHAT_IDS=$TELEGRAM_CHAT_IDS
+    stdin_open: true
+    tty: true
+volumes:
+  db:

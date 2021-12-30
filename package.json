@@ -1,0 +1,29 @@
+{
+  "name": "divar-hunter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon  --exec \"ts-node src/index.ts\"",
+    "debug": "nodemon --watch \"src/**\" --ext \"ts\" --ignore \"src/**/*.spec.ts\" --exec \"node --inspect-brk=0.0.0.0:9229 --require ts-node/register src/index.ts\"",
+    "start:dev": "ts-node src/index.ts",
+    "tsc:prod": "tsc -p tsconfig.prod.json",
+    "tsc:dev": "tsc -p tsconfig.json",
+    "start:prod": "node build/index.js"
+  },
+  "author": "Ali Heydari",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.24.0",
+    "mongodb": "^4.2.1",
+    "typescript": "^4.5.3"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.12",
+    "dotenv": "^10.0.0",
+    "nodemon": "^2.0.15",
+    "prettier": "^2.5.1",
+    "ts-node": "^10.4.0"
+  }
+}
