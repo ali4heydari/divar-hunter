@@ -154,29 +154,81 @@ interface Suggestion {
   filters: Filters;
 }
 
-interface Data2 {
-  title: string;
-  image: string;
-  web_image: WebImage2[];
-  description: string;
-  has_chat: boolean;
-  red_text: string;
-  normal_text: string;
-  token: string;
-  image_overlay_tag?: any;
-  image_top_left_tag?: any;
-  index: number;
-  'postapi-version': number;
-  city: string;
-  district: string;
-  category: string;
-  category_hierarchy: string[];
-  suggestions: Suggestion[];
+
+
+
+export interface PostData {
+  "@type": string
+  image_url: ImageUrl[]
+  image_count: number
+  title: string
+  has_chat: boolean
+  top_description_text: string
+  middle_description_text: string
+  bottom_description_text: string
+  red_text: string
+  action: Action
+  checkable: boolean
+  label: string
+  label_color: string
+  note: string
+  tags: any[]
+  standard_label_color: string
+  is_checked: boolean
+  has_divider: boolean
+  padded: boolean
+  image_top_left_tag: ImageTopLeftTag
+  token: string
 }
+
+export interface ImageUrl {
+  src: string
+  type: string
+}
+
+export interface Action {
+  type: string
+  payload: Payload
+  fallback_link: string
+  page_pop_link: boolean
+}
+
+export interface Payload {
+  "@type": string
+  token: string
+  web_info: WebInfo
+  vertical_info: VerticalInfo
+}
+
+export interface WebInfo {
+  title: string
+  district_persian: string
+  city_persian: string
+  category_slug_persian: string
+}
+
+export interface VerticalInfo {
+  "@type": string
+  vertical_type: number
+}
+
+export interface ImageTopLeftTag {
+  icon: Icon
+  text: string
+  is_icon_left: boolean
+}
+
+export interface Icon {
+  image_url_dark: string
+  image_url_light: string
+  icon_name: string
+  icon_color: string
+}
+
 
 interface PostList {
   widget_type: string;
-  data: Data2;
+  data: PostData;
 }
 
 interface WebWidgets {
