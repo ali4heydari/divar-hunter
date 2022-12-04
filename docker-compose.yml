@@ -4,9 +4,6 @@ services:
   mongodb:
     image: mongo:5.0.2
     restart: unless-stopped
-    depends_on:
-      tor:
-        condition: service_healthy
     environment:
       - MONGO_INITDB_ROOT_USERNAME=$MONGODB_USER
       - MONGO_INITDB_ROOT_PASSWORD=$MONGODB_PASSWORD
@@ -14,14 +11,10 @@ services:
       - 27017/tcp
     volumes:
       - db:/data/db
-    networks:
-      - tor-net
   app:
     depends_on:
       mongodb:
         condition: service_started
-      tor:
-        condition: service_healthy
     build: .
     restart: "unless-stopped"
     env_file:
@@ -32,28 +25,11 @@ services:
       - NODE_DOCKER_PORT=$NODE_DOCKER_PORT
       - TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
       - TELEGRAM_CHAT_IDS=$TELEGRAM_CHAT_IDS
-      - SLEEP_TIME=10_000
+      - SLEEP_TIME=10000
     stdin_open: true
     tty: true
-    networks:
-      - tor-net
-  tor:
-    image: dperson/torproxy:latest
-    restart: always
-    container_name: tor-proxy
-    expose:
-      - 9050/tcp
-    networks:
-      - tor-net
-    healthcheck:
-      interval: 20s
-      start_period: 2m
-      retries: 60
-      timeout: 10s
-      test: 'curl --socks5-hostname localhost:9150 https://check.torproject.org/api/ip | grep "\"IsTor\":true"'
+
 
 volumes:
   db:
-  tor:
-networks:
-  tor-net:
+

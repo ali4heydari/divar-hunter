@@ -2,8 +2,8 @@ import path from "path";
 
 import { URLSearchParams } from "url";
 import { SendMessage, WebSearchResponseDto } from "./dtos";
-import { divarClient, mongoClient, telegramBotClient } from "./clients";
-import {log, sleep} from "./utils";
+import { divarClient, mongoClient, telePushClient } from "./clients";
+import { log, sleep } from "./utils";
 import { isAxiosError } from "axios";
 
 async function sendFilterMessage(filters: {}, chatId: string | number) {
@@ -37,12 +37,14 @@ async function sendFilterMessage(filters: {}, chatId: string | number) {
       2
     )}</code>`;
 
-    const sendConditionMessageResponse =
-      await telegramBotClient.post<SendMessage>("/sendMessage", {
+    const sendConditionMessageResponse = await telePushClient.post<SendMessage>(
+      "/sendMessage",
+      {
         chat_id: chatId,
         text: filterMessageText,
         parse_mode: "HTML",
-      });
+      }
+    );
 
     if (!sendConditionMessageResponse.data.ok) {
       throw new Error(
@@ -58,12 +60,12 @@ async function sendFilterMessage(filters: {}, chatId: string | number) {
 }
 
 (async () => {
+  if (process.env.NODE_ENV === "development") {
+    require("dotenv").config({
+      path: path.join(__dirname, "..", ".env"),
+    });
+  }
   try {
-    if (process.env.NODE_ENV === "development") {
-      require("dotenv").config({
-        path: path.join(__dirname, "..", ".env"),
-      });
-    }
     log("starting, env vars:" + JSON.stringify(process.env, null, 2));
 
     await mongoClient.connect();
@@ -80,7 +82,7 @@ async function sendFilterMessage(filters: {}, chatId: string | number) {
       process.env?.DIVAR_URLS?.split(";").map((it) => it.trim()) ?? [];
 
     const subscribers =
-      process.env?.TELEGRAM_CHAT_IDS?.split(";").map((it) => it.trim()) ?? [];
+      process.env?.TELEPUSH_CHAT_IDS?.split(";").map((it) => it.trim()) ?? [];
 
     for (const urlStr of urls) {
       const url = new URL(urlStr);
@@ -106,7 +108,7 @@ async function sendFilterMessage(filters: {}, chatId: string | number) {
         }
       );
 
-      log(`${response.data.web_widgets.post_list.length} ad founded`);
+      log(`${response.data.web_widgets.post_list.length} post founded`);
 
       for (let i = 0; i < response.data.web_widgets.post_list.length; i++) {
         const { data: post, widget_type } =
@@ -122,16 +124,13 @@ async function sendFilterMessage(filters: {}, chatId: string | number) {
             token: post.token,
             chatId,
           });
-          log("existedPost:" + JSON.stringify({ existedPost }, null, 2));
 
-          if (post.token && !existedPost) {
-            log(`new post founded: ${JSON.stringify(post, null, 2)}`);
-
-            const huntMessageText = `${(post.image_url || [])
-              .map((it) => `<a href="${it.src}">📷</a>`)
-              .join(" ")}\n<b>${post.title}</b>\n<i>${
+          if (post.image_url && post.token && !existedPost) {
+            const huntMessageText = `${post.image_url
+              .map((it) => `[📷](${it.src})`)
+              .join(" ")}\n**${post.title}**\n__${
               post.top_description_text
-            }</i>\n${
+            }__\n${
               post.action.payload.web_info.city_persian +
               " " +
               post.action.payload.web_info.district_persian
@@ -139,30 +138,21 @@ async function sendFilterMessage(filters: {}, chatId: string | number) {
 
             log(`sending message to ${chatId}: ${huntMessageText}`);
 
-            const sendMessageResponse =
-              await telegramBotClient.post<SendMessage>("/sendMessage", {
-                chat_id: chatId,
-                text: huntMessageText,
-                parse_mode: "HTML",
-              });
+            await telePushClient.post(`/messages/${chatId}`, {
+              text: huntMessageText,
+              type: "text",
+              origin: "divar hunter bot",
+            });
 
             log(
-              "sendMessageResponse " +
-                JSON.stringify(sendMessageResponse.data, null, 2)
+              `Message sent successfully for https://divar.ir/v/a/${post.token}`
             );
 
-            if (sendMessageResponse.data.ok) {
-              log(
-                `Message sent successfully for https://divar.ir/v/a/${post.token}`
-              );
-
-              await postCollection.insertOne({
-                token: post.token,
-                city: post.action.payload.web_info.city_persian,
-                messageId: sendMessageResponse.data.result.message_id,
-                chatId,
-              });
-            }
+            await postCollection.insertOne({
+              token: post.token,
+              city: post.action.payload.web_info.city_persian,
+              chatId,
+            });
           }
         }
       }
@@ -176,6 +166,10 @@ async function sendFilterMessage(filters: {}, chatId: string | number) {
   } finally {
     await mongoClient.close();
     log("disconnected from mongo");
-    await sleep(Number(process.env.SLEEP_TIME))
+
+    const coolDownTime = Number(process.env.SLEEP_TIME || 5 * 1000);
+
+    log(`Waiting for ${coolDownTime}ms`);
+    await sleep(coolDownTime);
   }
 })();

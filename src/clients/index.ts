@@ -41,9 +41,15 @@ export const telegramBotClient = axios.create({
   timeout: 10_000,
 });
 
-telegramBotClient
-  .get(" https://check.torproject.org/api/ip")
-  .then((res) => log(JSON.stringify(res.data, null, 2)));
+export const telePushClient = axios.create({
+  baseURL: `https://telepush.dev/api`,
+  headers: {
+    "Content-Type": "application/json",
+    "Accept-Encoding": "application/json",
+  },
+});
+
+
 
 const mongoUrl = `mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_DOCKER_PORT}/${process.env.MONGODB_DATABASE}?authSource=admin`;
 
